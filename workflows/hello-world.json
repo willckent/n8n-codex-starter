@@ -1,0 +1,26 @@
+{
+  "name": "Hello World (Manual)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [280, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const inItems = $input.all();\nreturn inItems.map((item, idx) => ({ json: { ok: true, index: idx, ts: new Date().toISOString() }, pairedItem: { item: idx } }));"
+      },
+      "name": "Function",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [560, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Function", "type": "main", "index": 0 }]]
+    }
+  }
+}
