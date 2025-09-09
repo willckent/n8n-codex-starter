@@ -1,0 +1,134 @@
+{
+  "name": "Drive Contract Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "driveId": "",
+        "folderId": "<FOLDER_ID>",
+        "options": {
+          "pollTimes": { "item": [{ "minutes": 1 }] },
+          "mimeTypes": ["application/pdf"]
+        }
+      },
+      "name": "Drive Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": "={{$json[\"id\"]}}"
+      },
+      "name": "Download File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "binaryProperty": "data"
+      },
+      "name": "PDF Extract",
+      "type": "n8n-nodes-base.pdfExtract",
+      "typeVersion": 1,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "mode": "chat",
+        "message": "Extract key contract details: parties, effective date, payment terms, termination clause, and other notable obligations. Return JSON with keys parties, effective_date, payment_terms, termination_clause, other.",
+        "jsonOutput": true,
+        "additionalFields": {}
+      },
+      "name": "OpenAI",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const d = $json;\nreturn [{ json: {\n  text: `Contract Summary\\n\\nParties: ${d.parties}\\nEffective Date: ${d.effective_date}\\nPayment Terms: ${d.payment_terms}\\nTermination Clause: ${d.termination_clause}\\nOther: ${d.other}`\n}}];"
+      },
+      "name": "Format Summary",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "toList": ["recipient@example.com"],
+        "subject": "Contract Summary - {{$json[\"name\"]}}",
+        "text": "={{$json.text}}",
+        "attachments": [
+          {
+            "binaryPropertyName": "data"
+          }
+        ]
+      },
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1440, 300]
+    }
+  ],
+  "connections": {
+    "Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "PDF Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF Extract": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Format Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
